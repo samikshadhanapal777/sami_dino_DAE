@@ -5,11 +5,33 @@ h1{
     color: rgb(16, 16, 91);
     font-family: Helvetica;
     text-align: center; 
-    padding: 67px;
+    padding: 30px;
 }
 h2{
     text-align: center;
 }
 button{
     font-size:40px;
+}
+#mission{
+text-align: center;
+}
+main{
+    color: rgb(16, 16, 91);
+    font-family:'Times New Roman', Times, serif;
+    text-align: center; 
+    font-size: 50px;
+}
+footer{
+    text-align: center;
+    font-size: 40px;
+
+}
+
+#welcome{
+    color: rgb(63, 63, 63);
+}
+
+#emoji{
+    background-color: red;
 }
