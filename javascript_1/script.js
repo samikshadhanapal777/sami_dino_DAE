@@ -1,50 +1,68 @@
-document.addEventListener("DOMContentLoaded", function() {
+let time = 25 * 60; // default 25 minutes
+let timerInterval;
+let isRunning = false; // track if timer is running
 
-    const startButton = document.getElementById("startButton");
+let quotes = [
+    "You got this 💪",
+    "Stay focused 🚀",
+    "One step at a time",
+    "Keep going!",
+    "Success is built daily"
+];
 
-    startButton.addEventListener("click", function() {
-        alert("The maze awaits...");
-        console.log("Game Started");
-    });
+// Start or resume the timer
+function startTimer() {
+    if (isRunning) return; // prevent multiple intervals
+    isRunning = true;
 
-});
+    timerInterval = setInterval(function () {
+        time--;
 
-let remainingHealth = 5;
-let startGameButton = document.getElementById("startButton");
-var lives = 3;
-let rocketSpeed = 1000;
-let damage = 5 * 1;
-console.log(damage);
-let playerHealth = 100;
-playerHealth = playerHealth - 10;
-let playerScore = 0;
-let level = 1;
+        let minutes = Math.floor(time / 60);
+        let seconds = time % 60;
 
-function nextLevel() {
-    level++;
-    playerScore += 200;
+        document.getElementById("timer").textContent =
+            minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
 
-    console.log("Level:", level);
-    console.log("Score:", playerScore);
+        if (time <= 0) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            alert("Time's up! Take a break 😊");
+        }
+    }, 1000);
+
+    showQuotes();
 }
-let score = 150;
 
-if (score >= 200) {
-    console.log("Level Up!");
-} else {
-    console.log("Keep playing!");
+// Stop/pause the timer
+function stopTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
 }
-let score = 220;
-let hasFuel = true;
-let gameOver = false;
 
-if (score >= 200 && hasFuel && !gameOver) {
-    console.log("You can enter the next level!");
+// Reset the timer
+function resumeTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+
+    // Check if user has entered a custom time
+    const userInput = parseInt(document.getElementById("customTime").value);
+    if (!isNaN(userInput) && userInput > 0) {
+        time = userInput * 60; // convert minutes to seconds
+    } else {
+        time = 25 * 60; // default
+    }
+
+    let minutes = Math.floor(time / 60);
+    let seconds = time % 60;
+    document.getElementById("timer").textContent =
+        minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
 }
-let level = 2;
 
-// console output
-console.log("You reached level " + level);
-
-// screen output
-document.getElementById("levelText").textContent = "You reached level " + level;
+// Show random quotes every 10 minutes
+function showQuotes() {
+    setInterval(function () {
+        let random = Math.floor(Math.random() * quotes.length);
+        document.getElementById("quote").textContent = quotes[random];
+    }, 600000); // 10 minutes
+}

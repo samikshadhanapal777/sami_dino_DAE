@@ -1,47 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-   <link rel="stylesheet" href="styles.css">
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Labyrinth of the Iron Crown</title>
-   <title>Labyrinth of the Iron Crown</title>
-    <meta charset="UTF-8">
+    <title>Study Planner</title>
 </head>
 <body>
-   <header>
-   <img src="ChatGPT Image Mar 2, 2026 at 03_53_27 PM.png" alt="This is the logo">
-   </header>
-   <nav>
-   <a href="map.html">MAP</a>
-   <a href="index.html">HOME</a>
-   <a href="beginmission.html">BEGIN MISSION</a>
-   <script src="script.js"></script>
-</nav>
-<main>
-   <div id="welcome">
-       Welcome you are one of the many soldiers to do this mission.Don't let us down, our lives depend on you.
-       </div>
-       <h1>Instructions</h1>
-       <ul>
-           <li>Don't die</li>
-           <li>Stay alive</li>
-           <li>kill the king</li>
-           <li id="emoji"> ;)</li>
-       </ul>
-   </main>   
-  
-  
 
+    <h1>Study Planner</h1>
 
-<footer>Good luck, hope you stay ALIVE ;)</footer>
-<h1>Labyrinth of the Iron Crown</h1>
-    <button id="startButton">Start Game</button>
-    <!-- Connect JavaScript file -->
+    <!-- Add test -->
+    <input type="text" id="testName" placeholder="Test name">
+    <input type="date" id="testDate">
+    <button onclick="addTest()">Add Test</button>
+
+    <h2 id="status"></h2>
+
+    <!-- Study Timer -->
+<div>
+    <input type="number" id="customTime" placeholder="Enter minutes" />
+    <button onclick="startTimer()">Start / Resume</button>
+    <button onclick="stopTimer()">Stop</button>
+    <button onclick="resetTimer()">Reset</button>
+</div>
+
+    <h2 id="timer">00:00</h2>
+    
+    <!-- Quote -->
+    <p id="quote"></p>
+
+    <!-- Music -->
+    <audio id="music" src="calm.mp3" loop></audio>
+
     <script src="script.js"></script>
-
 </body>
 </html>
-
-
-
