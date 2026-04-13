@@ -1,0 +1,44 @@
+let time = 25 * 60; // 25 minutes
+let timerInterval;
+
+let quotes = [
+    "You got this ",
+    "Stay focused ",
+    "One step at a time",
+    "Keep going!",
+    "Success is built daily"
+];
+
+function startTimer() {
+    document.getElementById("music").play();
+
+    timerInterval = setInterval(function () {
+        time--;
+
+        let minutes = Math.floor(time / 60);
+        let seconds = time % 60;
+
+        document.getElementById("timer").textContent =
+            minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+        if (time <= 0) {
+            clearInterval(timerInterval);
+            alert("Time's up! Take a break :)");
+        }
+    }, 1000);
+
+    showQuotes();
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    time = 25 * 60;
+    document.getElementById("timer").textContent = "25:00";
+}
+
+function showQuotes() {
+    setInterval(function () {
+        let random = Math.floor(Math.random() * quotes.length);
+        document.getElementById("quote").textContent = quotes[random];
+    }, 600000); // every 10 minutes
+}

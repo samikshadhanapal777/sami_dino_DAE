@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks — StudyPlanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .tasks-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .add-task-form { display:flex; gap:10px; flex-wrap:wrap; }
+        .add-task-form input, .add-task-form select {
+            padding:10px 14px; border:1px solid var(--border);
+            border-radius:10px; font-family:'Lato',sans-serif;
+            font-size:0.9rem; outline:none; background:white;
+        }
+        .add-task-form input:focus, .add-task-form select:focus { border-color:var(--blue); }
+        .add-task-form input[type="text"] { flex:1; min-width:200px; }
+        .full-task-list { display:flex; flex-direction:column; gap:10px; }
+        .full-task-item {
+            display:flex; align-items:center; gap:12px;
+            background:var(--card); padding:14px 18px;
+            border-radius:12px; box-shadow:var(--shadow);
+            transition:opacity 0.3s;
+        }
+        .full-task-item.fading { opacity:0; }
+        .full-task-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); cursor:pointer; flex-shrink:0; }
+        .task-title { flex:1; font-weight:600; font-size:0.95rem; }
+        .task-date { font-size:0.82rem; color:var(--muted); white-space:nowrap; }
+        .task-badge { padding:3px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; white-space:nowrap; }
+        .task-badge.task { background:#dbeafe; color:#1d4ed8; }
+        .task-badge.exam { background:#fef9c3; color:#854d0e; }
+        .done-label { text-decoration:line-through; color:var(--muted); }
+        .btn-delete {
+            background:none; border:none; cursor:pointer;
+            color:#cbd5e1; font-size:1.1rem; padding:4px 6px;
+            border-radius:6px; transition:color 0.2s, background 0.2s; flex-shrink:0;
+        }
+        .btn-delete:hover { color:#e63946; background:#fee2e2; }
+        .conn-status {
+            font-size:0.78rem; font-weight:700; padding:5px 14px;
+            border-radius:20px; display:inline-block; margin-bottom:16px;
+        }
+        .conn-status.live     { background:#dcfce7; color:#166534; }
+        .conn-status.demo     { background:#fef9c3; color:#854d0e; }
+        .conn-status.checking { background:#f1f5f9; color:#64748b; }
+        .empty-state { text-align:center; padding:40px; color:var(--muted); font-size:1rem; }
+        .toast {
+            position:fixed; bottom:28px; right:28px;
+            background:#1e293b; color:white;
+            padding:12px 22px; border-radius:12px;
+            font-family:'Nunito',sans-serif; font-weight:700; font-size:0.9rem;
+            box-shadow:0 8px 30px rgba(0,0,0,0.2);
+            transform:translateY(80px); opacity:0;
+            transition:all 0.35s cubic-bezier(.34,1.56,.64,1); z-index:999;
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">📚</span>
+        <span class="brand-text"><strong>Study</strong>Planner</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="index.html">Dashboard</a></li>
+        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="subjects.html">Subjects</a></li>
+        <li><a href="tasks.html" class="active">Tasks</a></li>
+    </ul>
+    <button class="btn-signout" onclick="signOut()">Sign Out</button>
+</nav>
+
+<main class="main-wrapper">
+
+    <div class="tasks-header">
+        <h1>📝 All Tasks &amp; Exams</h1>
+    </div>
+
+    <!-- CONNECTION STATUS -->
+    <div id="connStatus" class="conn-status checking">⏳ Connecting to database...</div>
+
+    <!-- ADD TASK FORM -->
+    <div class="card" style="margin-bottom:0">
+        <h2 class="card-title">Add New Task / Exam</h2>
+        <div class="add-task-form">
+            <input type="text" id="newTitle" placeholder="Task or exam name...">
+            <input type="date" id="newDate">
+            <select id="newType">
+                <option value="task">📋 Task</option>
+                <option value="exam">📌 Exam</option>
+            </select>
+            <button class="btn-primary" onclick="addNewTask()">+ Add</button>
+        </div>
+    </div>
+
+    <!-- TASK LIST -->
+    <div id="fullTaskList" class="full-task-list">
+        <p class="empty-state">⏳ Loading tasks...</p>
+    </div>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ---- AUTO-DETECT PORT ----
+// Because you open this page via MAMP (http://localhost:8888/...),
+// window.location.origin gives us the correct base automatically.
+const ORIGIN   = window.location.origin;
+const API_BASE = ORIGIN + '/studyplanner/api';
+
+let isLive    = false;
+let demoTasks = [];
+let nextDemoId = 10;
+
+// ---- TOAST ----
+function showToast(msg, duration = 3500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ---- STATUS BADGE ----
+function setConnStatus(live, msg) {
+    const el = document.getElementById('connStatus');
+    el.className = 'conn-status ' + (live ? 'live' : 'demo');
+    el.textContent = msg;
+}
+
+// ---- LOAD ALL TASKS ----
+async function loadAllTasks() {
+    try {
+        const res = await fetch(`${API_BASE}/tasks.php?type=tasks`, {
+            signal: AbortSignal.timeout(4000)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        isLive = true;
+        setConnStatus(true, '🟢 Live — connected to MySQL database');
+        renderTasks(data);
+
+    } catch (e) {
+        isLive = false;
+        setConnStatus(false, '🟡 Demo mode — open via MAMP URL (localhost:8888) to connect to database');
+
+        if (demoTasks.length === 0) {
+            demoTasks = [
+                { id:1, title:'Read Chapter 5 - Biology',   due_date:'2026-04-14', type:'task', done:0 },
+                { id:2, title:'Complete Algebra Worksheet',  due_date:'2026-04-14', type:'task', done:0 },
+                { id:3, title:'Research WWII Events',        due_date:'2026-04-15', type:'task', done:0 },
+                { id:4, title:'Write English Essay Draft',   due_date:'2026-04-16', type:'task', done:0 },
+                { id:5, title:'Math Exam',                   due_date:'2026-05-28', type:'exam', done:0 },
+            ];
+        }
+        renderTasks(demoTasks);
+    }
+}
+
+// ---- RENDER ----
+function renderTasks(tasks) {
+    const list = document.getElementById('fullTaskList');
+    if (!tasks || tasks.length === 0) {
+        list.innerHTML = '<div class="empty-state">📭 No tasks yet — add one above!</div>';
+        return;
+    }
+    list.innerHTML = tasks.map(t => `
+        <div class="full-task-item" id="row${t.id}">
+            <input type="checkbox" id="cb${t.id}" ${t.done ? 'checked' : ''}
+                   onchange="toggleTask(${t.id}, this.checked)">
+            <label for="cb${t.id}" class="task-title ${t.done ? 'done-label' : ''}" id="lbl${t.id}">
+                ${escHtml(t.title)}
+            </label>
+            <span class="task-date">${t.due_date ? formatDate(t.due_date) : '—'}</span>
+            <span class="task-badge ${t.type}">${t.type === 'exam' ? '📌 Exam' : '📋 Task'}</span>
+            <button class="btn-delete" onclick="deleteTask(${t.id})" title="Delete">🗑</button>
+        </div>
+    `).join('');
+}
+
+// ---- ADD NEW TASK ----
+async function addNewTask() {
+    const titleEl = document.getElementById('newTitle');
+    const dateEl  = document.getElementById('newDate');
+    const typeEl  = document.getElementById('newType');
+
+    const title = titleEl.value.trim();
+    const date  = dateEl.value;
+    const type  = typeEl.value;
+
+    if (!title) { showToast('⚠️ Please enter a task name!'); titleEl.focus(); return; }
+
+    if (isLive) {
+        // LIVE: save to MySQL
+        try {
+            const res = await fetch(`${API_BASE}/tasks.php`, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ title, date, type })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`✅ "${title}" saved to database!`);
+                titleEl.value = ''; dateEl.value = '';
+                loadAllTasks(); // refresh list from DB
+            } else {
+                showToast('❌ Error: ' + (data.error || 'Unknown'));
+            }
+        } catch(e) {
+            showToast('❌ PHP error. Check MAMP Apache is running.');
+        }
+
+    } else {
+        // DEMO: add to in-memory list and RE-RENDER immediately
+        const newTask = { id: nextDemoId++, title, due_date: date || null, type, done: 0 };
+        demoTasks.unshift(newTask);  // add to top
+        renderTasks(demoTasks);      // re-render list NOW ✅
+        showToast(`✅ "${title}" added! Open via MAMP to save permanently.`);
+        titleEl.value = ''; dateEl.value = '';
+    }
+}
+
+// ---- TOGGLE DONE ----
+async function toggleTask(id, done) {
+    const lbl = document.getElementById('lbl' + id);
+    if (lbl) lbl.className = 'task-title ' + (done ? 'done-label' : '');
+
+    if (isLive) {
+        try {
+            await fetch(`${API_BASE}/tasks.php`, {
+                method:'PATCH',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ id, done: done ? 1 : 0 })
+            });
+        } catch(e) {}
+    } else {
+        const t = demoTasks.find(t => t.id === id);
+        if (t) t.done = done ? 1 : 0;
+    }
+}
+
+// ---- DELETE TASK ----
+async function deleteTask(id) {
+    const row = document.getElementById('row' + id);
+    if (row) { row.classList.add('fading'); await new Promise(r => setTimeout(r, 300)); }
+
+    if (isLive) {
+        try {
+            await fetch(`${API_BASE}/tasks.php`, {
+                method:'DELETE',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ id })
+            });
+        } catch(e) {}
+        loadAllTasks();
+    } else {
+        demoTasks = demoTasks.filter(t => t.id !== id);
+        renderTasks(demoTasks);
+    }
+    showToast('🗑 Task deleted');
+}
+
+// ---- HELPERS ----
+function formatDate(d) {
+    if (!d) return '';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function signOut() { if (confirm('Sign out?')) window.location.href = 'login.html'; }
+
+// ---- INIT ----
+document.addEventListener('DOMContentLoaded', () => {
+    loadAllTasks();
+    document.getElementById('newTitle').addEventListener('keydown', e => {
+        if (e.key === 'Enter') addNewTask();
+    });
+});
+</script>
+</body>
+</html>

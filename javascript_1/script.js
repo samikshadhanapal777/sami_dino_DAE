@@ -41,7 +41,7 @@ function stopTimer() {
 }
 
 // Reset the timer
-function resumeTimer() {
+function resetTimer() {
     clearInterval(timerInterval);
     isRunning = false;
 

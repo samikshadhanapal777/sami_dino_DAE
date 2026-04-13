@@ -1,50 +1,99 @@
+/* PAGE BACKGROUND */
 body {
     margin: 0;
-    height: 100vh;
-    font-family: Arial, sans-serif;
-
-    /* Use your aesthetic background image */
-    background-image: url("background.png");
-    background-size: cover;
-    background-position: center;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    font-family: 'Poppins', sans-serif;
+    background: #f4f6fb; /* light clean background */
 }
 
+/* MAIN CONTAINER */
 .container {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 40px;
-    border-radius: 20px;
-    text-align: center;
-    color: white;
+    width: 90%;
+    max-width: 1100px;
+    margin: 30px auto;
 }
 
+/* TITLE */
 h1 {
     font-size: 40px;
+    margin-bottom: 20px;
+}
+
+/* TOP INPUT BAR */
+.top-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.top-bar input,
+.top-bar button {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* GRID LAYOUT (THIS IS THE BIG CHANGE) */
+.dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* CARDS */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* TIMER */
+#timer {
+    font-size: 60px;
+    color: #6ee7a2;
     text-align: center;
 }
 
-#timer {
-    font-size: 60px;
-    margin: 20px 0;
-}
-
+/* BUTTONS */
 button {
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
+    background: #4f46e5;
+    color: white;
     border: none;
-    border-radius: 10px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: rgb(97, 134, 103);
+    background: #4338ca;
 }
 
-#quote {
-    margin-top: 20px;
-    font-style: italic;
+/* TASK LIST */
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background: #f1f5f9;
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+/* STATUS TEXT */
+#status {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* TODAY DATE */
+#todayDate {
+    font-size: 18px;
+    color: #555;
+}
+
+/* OPTIONAL: MAKE IT LOOK NICE ON SMALL SCREENS */
+@media (max-width: 700px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
 }
