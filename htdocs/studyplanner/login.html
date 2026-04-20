@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — StudyPlanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:    #4f7cac;
+            --blue-lt: #d0e8ff;
+            --blue-dk: #3a6090;
+            --teal:    #2a9d8f;
+            --green:   #52b788;
+            --bg:      #eef2f7;
+            --card:    #ffffff;
+            --text:    #1e293b;
+            --muted:   #64748b;
+            --border:  #e2e8f0;
+            --shadow:  0 4px 20px rgba(0,0,0,0.07);
+            --radius:  14px;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            align-items: center;
+            background: var(--card);
+            padding: 0 40px;
+            height: 64px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+        .brand-icon { font-size: 1.5rem; }
+
+        /* ===== FULL-PAGE LAYOUT ===== */
+        .login-page {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ===== LEFT PANEL ===== */
+        .left-panel {
+            background: linear-gradient(145deg, #3a6090 0%, #4f7cac 50%, #2a9d8f 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 48px;
+            position: relative;
+            overflow: hidden;
+        }
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            width: 380px; height: 380px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            top: -120px; right: -120px;
+        }
+        .left-panel::after {
+            content: '';
+            position: absolute;
+            width: 260px; height: 260px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            bottom: -80px; left: -80px;
+        }
+        .left-content { position: relative; z-index: 1; text-align: center; }
+        .left-content h2 {
+            font-family: 'Nunito', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 14px;
+            line-height: 1.2;
+        }
+        .left-content p {
+            color: rgba(255,255,255,0.75);
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 320px;
+            margin: 0 auto 36px;
+        }
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px 16px;
+            backdrop-filter: blur(8px);
+        }
+        .feature-item span:first-child { font-size: 1.3rem; flex-shrink: 0; }
+        .feature-item .feat-text { color: white; font-weight: 700; font-size: 0.88rem; }
+
+        /* ===== RIGHT PANEL ===== */
+        .right-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 40px;
+        }
+        .form-card {
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+            padding: 44px 40px;
+            width: 100%;
+            max-width: 420px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        /* Tab switcher */
+        .tab-row {
+            display: flex;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 32px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 9px;
+            border: none;
+            background: transparent;
+            border-radius: 9px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.25s;
+        }
+        .tab-btn.active {
+            background: white;
+            color: var(--blue);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        /* Headings */
+        .form-heading {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .form-sub {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 28px;
+        }
+
+        /* Fields */
+        .field-group { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .input-wrap { position: relative; }
+        .input-wrap .input-icon {
+            position: absolute;
+            left: 13px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+        .field input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            border: 2px solid var(--border);
+            border-radius: 11px;
+            font-family: 'Lato', sans-serif;
+            font-size: 0.92rem;
+            outline: none;
+            background: #fafbfd;
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .field input:focus {
+            border-color: var(--blue);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(79,124,172,0.12);
+        }
+        .field input.error-input { border-color: #e63946; }
+
+        /* Error */
+        .field-error { font-size: 0.75rem; color: #e63946; font-weight: 700; display: none; }
+        .field-error.show { display: block; }
+
+        /* Password toggle */
+        .pw-toggle {
+            position: absolute;
+            right: 12px; top: 50%;
+            transform: translateY(-50%);
+            background: none; border: none;
+            cursor: pointer;
+            font-size: 1rem; color: var(--muted); padding: 4px;
+        }
+        .pw-toggle:hover { color: var(--blue); }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dk) 100%);
+            color: white; border: none; border-radius: 11px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800; font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(79,124,172,0.35);
+            letter-spacing: 0.02em;
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,124,172,0.45); }
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit.loading { pointer-events: none; opacity: 0.8; }
+
+        /* Error banner */
+        .form-error-banner {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #e63946;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.83rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: none;
+        }
+        .form-error-banner.show { display: block; }
+
+        /* Mode switch */
+        .switch-mode {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 20px;
+        }
+        .switch-mode a {
+            color: var(--blue);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .switch-mode a:hover { text-decoration: underline; }
+
+        /* Demo mode notice */
+        .demo-notice {
+            background: #fef9c3;
+            border: 1px solid #fde68a;
+            color: #854d0e;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: none;
+        }
+        .demo-notice.show { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 700px) {
+            .login-page { grid-template-columns: 1fr; }
+            .left-panel { display: none; }
+            .right-panel { padding: 32px 20px; align-items: flex-start; padding-top: 40px; }
+            .form-card { padding: 32px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">📚</span>
+        <span class="brand-text"><strong>Study</strong>Planner</span>
+    </div>
+</nav>
+
+<!-- PAGE -->
+<div class="login-page">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <div class="left-content">
+            <h2>Your personal<br>study companion 📚</h2>
+            <p>Stay on top of every exam, quiz, and deadline — all in one beautiful place.</p>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span>📅</span>
+                    <span class="feat-text">Visual calendar with exams &amp; quizzes</span>
+                </div>
+                <div class="feature-item">
+                    <span>✅</span>
+                    <span class="feat-text">Task list that syncs with your database</span>
+                </div>
+                <div class="feature-item">
+                    <span>⏱</span>
+                    <span class="feat-text">Built-in study timer to stay focused</span>
+                </div>
+                <div class="feature-item">
+                    <span>📊</span>
+                    <span class="feat-text">Track study hours and upcoming deadlines</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <div class="form-card">
+
+            <!-- Tab switcher -->
+            <div class="tab-row">
+                <button class="tab-btn active" id="tabSignIn" onclick="showTab('signin')">Sign In</button>
+                <button class="tab-btn"         id="tabSignUp" onclick="showTab('signup')">Create Account</button>
+            </div>
+
+            <!-- Demo mode notice (shown when MAMP not running) -->
+            <div id="demoNotice" class="demo-notice">
+                ⚠️ Demo mode — MAMP doesn't appear to be running. Sign in will use localStorage only. Start MAMP for full database auth.
+            </div>
+
+            <!-- ======= SIGN IN FORM ======= -->
+            <div id="signinForm">
+                <h2 class="form-heading" id="signinHeading">Welcome back! 👋</h2>
+                <p class="form-sub">Sign in to your StudyPlanner account</p>
+
+                <div id="signinError" class="form-error-banner"></div>
+
+                <div class="field-group">
+                    <div class="field">
+                        <label for="siName">Your Name</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="siName" placeholder="Alex" autocomplete="name">
+                        </div>
+                        <span class="field-error" id="siNameErr">Please enter your name</span>
+                    </div>
+                    <div class="field">
+                        <label for="siPassword">Password</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="siPassword" placeholder="••••••••" autocomplete="current-password">
+                            <button class="pw-toggle" type="button" onclick="togglePw('siPassword', this)">👁</button>
+                        </div>
+                        <span class="field-error" id="siPwErr">Please enter your password</span>
+                    </div>
+                </div>
+
+                <button class="btn-submit" id="signinBtn" onclick="handleSignIn()">Sign In →</button>
+
+                <p class="switch-mode">
+                    Don't have an account? <a onclick="showTab('signup')">Create one free</a>
+                </p>
+            </div>
+
+            <!-- ======= SIGN UP FORM ======= -->
+            <div id="signupForm" style="display:none">
+                <h2 class="form-heading">Hello there! 👋</h2>
+                <p class="form-sub">Create your free StudyPlanner account</p>
+
+                <div id="signupError" class="form-error-banner"></div>
+
+                <div class="field-group">
+                    <div class="field">
+                        <label for="suName">Your Name</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="suName" placeholder="Alex" autocomplete="name">
+                        </div>
+                        <span class="field-error" id="suNameErr">Please enter your name</span>
+                    </div>
+                    <div class="field">
+                        <label for="suPassword">Create Password</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="suPassword" placeholder="••••••••" autocomplete="new-password">
+                            <button class="pw-toggle" type="button" onclick="togglePw('suPassword', this)">👁</button>
+                        </div>
+                        <span class="field-error" id="suPwErr">Password must be at least 4 characters</span>
+                    </div>
+                    <div class="field">
+                        <label for="suConfirm">Confirm Password</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="suConfirm" placeholder="••••••••" autocomplete="new-password">
+                        </div>
+                        <span class="field-error" id="suConfErr">Passwords do not match</span>
+                    </div>
+                </div>
+
+                <button class="btn-submit" id="signupBtn" onclick="handleSignUp()">Create Account →</button>
+
+                <p class="switch-mode">
+                    Already have an account? <a onclick="showTab('signin')">Sign in</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// =============================================
+//   login.html — inline script
+//   Tries PHP session auth first (MAMP live),
+//   falls back to localStorage (demo mode).
+// =============================================
+
+const AUTH_BASE = window.location.origin + '/studyplanner/auth.php';
+let isLiveMode = false;
+
+// ---- On load: check if already signed in ----
+window.addEventListener('DOMContentLoaded', async () => {
+    // If we just signed out, don't auto-redirect back
+    const justSignedOut = document.referrer.includes('index.html') || document.referrer.includes('tasks.html');
+
+    // Try to ping auth.php
+    try {
+        const res = await fetch(`${AUTH_BASE}?action=check`, {
+            credentials: 'include',
+            signal: AbortSignal.timeout(3000)
+        });
+        const data = await res.json();
+        isLiveMode = true;
+
+        if (data.loggedIn && !justSignedOut) {
+            window.location.replace('index.html');
+            return;
+        }
+
+        // Check if they've signed up before (localStorage flag)
+        const hadAccount = localStorage.getItem('sp_had_account');
+        if (!hadAccount) {
+            document.getElementById('signinHeading').textContent = 'Nice to meet you! 👋';
+        }
+
+    } catch (e) {
+        // MAMP not running — fall back to localStorage demo mode
+        isLiveMode = false;
+        document.getElementById('demoNotice').classList.add('show');
+
+        const user = localStorage.getItem('sp_user');
+        if (user) {
+            window.location.replace('index.html');
+            return;
+        }
+    }
+});
+
+// ---- TAB SWITCHER ----
+function showTab(tab) {
+    const isSignIn = (tab === 'signin');
+    document.getElementById('signinForm').style.display  = isSignIn ? 'block' : 'none';
+    document.getElementById('signupForm').style.display  = isSignIn ? 'none'  : 'block';
+    document.getElementById('tabSignIn').classList.toggle('active',  isSignIn);
+    document.getElementById('tabSignUp').classList.toggle('active', !isSignIn);
+    clearErrors();
+}
+
+// ---- SIGN IN ----
+async function handleSignIn() {
+    clearErrors();
+    const nameEl = document.getElementById('siName');
+    const pwEl   = document.getElementById('siPassword');
+    const name   = nameEl.value.trim();
+    const pw     = pwEl.value;
+    let ok = true;
+
+    if (!name) { showFieldError('siNameErr', nameEl); ok = false; }
+    if (!pw)   { showFieldError('siPwErr',   pwEl);   ok = false; }
+    if (!ok) return;
+
+    const btn = document.getElementById('signinBtn');
+    btn.textContent = '⏳ Signing in…';
+    btn.classList.add('loading');
+
+    if (isLiveMode) {
+        // ---- LIVE: PHP session auth ----
+        try {
+            const res = await fetch(`${AUTH_BASE}?action=signin`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, password: pw })
+            });
+            const data = await res.json();
+            if (data.success) {
+                localStorage.setItem('sp_had_account', '1');
+                btn.textContent = '✅ Loading…';
+                setTimeout(() => window.location.href = 'index.html', 500);
+            } else {
+                showBannerError('signinError', data.error || 'Sign in failed');
+                btn.textContent = 'Sign In →';
+                btn.classList.remove('loading');
+            }
+        } catch (e) {
+            showBannerError('signinError', 'Could not reach server. Is MAMP running?');
+            btn.textContent = 'Sign In →';
+            btn.classList.remove('loading');
+        }
+
+    } else {
+        // ---- DEMO: localStorage fallback ----
+        const storedName = localStorage.getItem('sp_user_registered');
+        const storedPw   = localStorage.getItem('sp_password');
+
+        if (storedName && storedPw) {
+            if (name.toLowerCase() !== storedName.toLowerCase() || pw !== storedPw) {
+                showBannerError('signinError', 'Incorrect name or password. Try again!');
+                btn.textContent = 'Sign In →';
+                btn.classList.remove('loading');
+                return;
+            }
+        }
+        completeLocalLogin(name, pw, false, btn);
+    }
+}
+
+// ---- SIGN UP ----
+async function handleSignUp() {
+    clearErrors();
+    const nameEl = document.getElementById('suName');
+    const pwEl   = document.getElementById('suPassword');
+    const confEl = document.getElementById('suConfirm');
+    const name   = nameEl.value.trim();
+    const pw     = pwEl.value;
+    const conf   = confEl.value;
+    let ok = true;
+
+    if (!name)        { showFieldError('suNameErr', nameEl); ok = false; }
+    if (pw.length < 4){ showFieldError('suPwErr',   pwEl);   ok = false; }
+    if (pw !== conf)  { showFieldError('suConfErr',  confEl); ok = false; }
+    if (!ok) return;
+
+    const btn = document.getElementById('signupBtn');
+    btn.textContent = '⏳ Creating…';
+    btn.classList.add('loading');
+
+    if (isLiveMode) {
+        // ---- LIVE: PHP session auth ----
+        try {
+            const res = await fetch(`${AUTH_BASE}?action=signup`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, password: pw })
+            });
+            const data = await res.json();
+            if (data.success) {
+                localStorage.setItem('sp_had_account', '1');
+                btn.textContent = '✅ Loading…';
+                setTimeout(() => window.location.href = 'index.html', 500);
+            } else {
+                showBannerError('signupError', data.error || 'Sign up failed');
+                btn.textContent = 'Create Account →';
+                btn.classList.remove('loading');
+            }
+        } catch (e) {
+            showBannerError('signupError', 'Could not reach server. Is MAMP running?');
+            btn.textContent = 'Create Account →';
+            btn.classList.remove('loading');
+        }
+
+    } else {
+        // ---- DEMO: localStorage fallback ----
+        completeLocalLogin(name, pw, true, btn);
+    }
+}
+
+// ---- DEMO MODE: localStorage login ----
+function completeLocalLogin(name, password, isNew, btn) {
+    localStorage.setItem('sp_user_registered', name);
+    localStorage.setItem('sp_password', password);
+    localStorage.setItem('sp_user', name);
+    localStorage.setItem('sp_had_account', '1');
+    const visits = parseInt(localStorage.getItem('sp_visits') || '0') + 1;
+    localStorage.setItem('sp_visits', visits);
+    localStorage.setItem('sp_first_visit', visits === 1 ? '1' : '0');
+
+    btn.textContent = '✅ Loading…';
+    setTimeout(() => window.location.href = 'index.html', 500);
+}
+
+// ---- PASSWORD TOGGLE ----
+function togglePw(inputId, btn) {
+    const input = document.getElementById(inputId);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+
+// ---- ERROR HELPERS ----
+function showFieldError(errId, inputEl) {
+    document.getElementById(errId).classList.add('show');
+    if (inputEl) inputEl.classList.add('error-input');
+}
+function showBannerError(bannerId, msg) {
+    const el = document.getElementById(bannerId);
+    el.textContent = msg;
+    el.classList.add('show');
+}
+function clearErrors() {
+    document.querySelectorAll('.field-error').forEach(e => e.classList.remove('show'));
+    document.querySelectorAll('.error-input').forEach(e => e.classList.remove('error-input'));
+    document.querySelectorAll('.form-error-banner').forEach(e => e.classList.remove('show'));
+}
+
+// Enter key
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const signinVisible = document.getElementById('signinForm').style.display !== 'none';
+    if (signinVisible) handleSignIn(); else handleSignUp();
+});
+</script>
+</body>
+</html>
