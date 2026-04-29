@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjects — StudyPlanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .subjects-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .add-subject-form {
+            display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+        }
+        .add-subject-form input[type="text"] {
+            flex:1; min-width:200px; padding:11px 16px;
+            border:1px solid var(--border); border-radius:10px;
+            font-family:'Lato',sans-serif; font-size:0.92rem;
+            outline:none; background:white;
+        }
+        .add-subject-form input[type="text"]:focus { border-color:var(--blue); }
+        .color-row {
+            display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+        }
+        .color-swatch {
+            width:28px; height:28px; border-radius:50%; cursor:pointer;
+            border:3px solid transparent; transition:transform 0.15s, border-color 0.15s;
+            flex-shrink:0;
+        }
+        .color-swatch:hover { transform:scale(1.15); }
+        .color-swatch.selected { border-color:var(--text); transform:scale(1.15); }
+
+        /* Subjects grid */
+        .subjects-grid {
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap:18px;
+        }
+        .subject-card {
+            background:var(--card); border-radius:var(--radius);
+            box-shadow:var(--shadow); padding:22px 20px;
+            display:flex; flex-direction:column; gap:10px;
+            position:relative; transition:transform 0.15s;
+            border-top:5px solid var(--card-color, var(--blue));
+        }
+        .subject-card:hover { transform:translateY(-3px); }
+        .subject-name {
+            font-family:'Nunito',sans-serif; font-weight:800;
+            font-size:1.05rem; color:var(--text);
+        }
+        .subject-meta { font-size:0.78rem; color:var(--muted); }
+        .btn-del-subject {
+            position:absolute; top:10px; right:10px;
+            background:none; border:none; cursor:pointer;
+            color:#cbd5e1; font-size:1rem; padding:4px 6px;
+            border-radius:6px; transition:color 0.2s, background 0.2s;
+        }
+        .btn-del-subject:hover { color:#e63946; background:#fee2e2; }
+
+        .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+        .empty-state p { font-size:1rem; margin-top:8px; }
+
+        .conn-status {
+            font-size:0.78rem; font-weight:700; padding:5px 14px;
+            border-radius:20px; display:inline-block; margin-bottom:16px;
+        }
+        .conn-status.live     { background:#dcfce7; color:#166534; }
+        .conn-status.demo     { background:#fef9c3; color:#854d0e; }
+        .conn-status.checking { background:#f1f5f9; color:#64748b; }
+
+        .toast {
+            position:fixed; bottom:28px; right:28px;
+            background:#1e293b; color:white;
+            padding:12px 22px; border-radius:12px;
+            font-family:'Nunito',sans-serif; font-weight:700; font-size:0.9rem;
+            box-shadow:0 8px 30px rgba(0,0,0,0.2);
+            transform:translateY(80px); opacity:0;
+            transition:all 0.35s cubic-bezier(.34,1.56,.64,1); z-index:999;
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+
+        .label-color { font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">📚</span>
+        <span class="brand-text"><strong>Study</strong>Planner</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="index.html">Dashboard</a></li>
+        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="subjects.html" class="active">Subjects</a></li>
+        <li><a href="tasks.html">Tasks</a></li>
+    </ul>
+    <button class="btn-signout" onclick="signOut()">Sign Out</button>
+</nav>
+
+<main class="main-wrapper">
+
+    <div class="subjects-header">
+        <h1>📖 My Subjects</h1>
+    </div>
+
+    <div id="connStatus" class="conn-status checking">⏳ Connecting…</div>
+
+    <!-- Add Subject Form -->
+    <div class="card" style="margin-bottom:0">
+        <h2 class="card-title">Add New Subject</h2>
+        <div class="add-subject-form">
+            <input type="text" id="newSubjectName" placeholder="e.g. Biology, Math, History…">
+            <div style="display:flex;flex-direction:column;gap:6px">
+                <span class="label-color">Pick a color</span>
+                <div class="color-row" id="colorRow"></div>
+            </div>
+            <button class="btn-primary" onclick="addSubject()">+ Add Subject</button>
+        </div>
+    </div>
+
+    <!-- Subjects List -->
+    <div id="subjectsList" class="subjects-grid">
+        <p class="empty-state">⏳ Loading subjects…</p>
+    </div>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<!-- AUTH GUARD -->
+<script>
+(async function() {
+    const AUTH_BASE = window.location.origin + '/studyplanner/auth.php';
+    try {
+        const res = await fetch(`${AUTH_BASE}?action=check`, {
+            credentials: 'include',
+            signal: AbortSignal.timeout(3000)
+        });
+        const data = await res.json();
+        if (!data.loggedIn) window.location.replace('login.html');
+    } catch (e) {
+        if (!localStorage.getItem('sp_user')) window.location.replace('login.html');
+    }
+})();
+</script>
+
+<script>
+const ORIGIN      = window.location.origin;
+const API_BASE    = ORIGIN + '/studyplanner/api';
+const AUTH_URL    = ORIGIN + '/studyplanner/auth.php';
+
+let isLive       = false;
+let selectedColor = '#4f7cac';
+
+const PALETTE = [
+    '#4f7cac','#e63946','#2a9d8f','#f4a261','#6c63ff',
+    '#52b788','#e76f51','#457b9d','#a8dadc','#ffd166'
+];
+
+function initColorPicker() {
+    const row = document.getElementById('colorRow');
+    PALETTE.forEach((c, i) => {
+        const sw = document.createElement('div');
+        sw.className = 'color-swatch' + (i === 0 ? ' selected' : '');
+        sw.style.background = c;
+        sw.dataset.color = c;
+        sw.title = c;
+        sw.onclick = () => {
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            sw.classList.add('selected');
+            selectedColor = c;
+        };
+        row.appendChild(sw);
+    });
+}
+
+function showToast(msg, duration = 3500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function setConnStatus(live) {
+    const el = document.getElementById('connStatus');
+    el.className = 'conn-status ' + (live ? 'live' : 'demo');
+    el.textContent = live ? '🟢 Live — connected to MySQL database' : '🟡 Demo mode — MAMP not running';
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function loadSubjects() {
+    try {
+        const res = await fetch(`${API_BASE}/subjects.php`, {
+            credentials: 'include',
+            signal: AbortSignal.timeout(4000)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        isLive = true;
+        setConnStatus(true);
+        renderSubjects(data);
+
+    } catch(e) {
+        isLive = false;
+        setConnStatus(false);
+        renderSubjects([]);
+    }
+}
+
+function renderSubjects(subjects) {
+    const grid = document.getElementById('subjectsList');
+    if (!subjects || subjects.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state" style="grid-column:1/-1">
+                <div style="font-size:3rem">📖</div>
+                <p>No subjects yet.<br>Add your first one above!</p>
+            </div>`;
+        return;
+    }
+    grid.innerHTML = subjects.map(s => `
+        <div class="subject-card" style="--card-color:${escHtml(s.color)}">
+            <button class="btn-del-subject" onclick="deleteSubject(${s.id}, '${escHtml(s.name)}')" title="Delete">🗑</button>
+            <div class="subject-name">${escHtml(s.name)}</div>
+            <div class="subject-meta">Added ${formatDate(s.created_at)}</div>
+        </div>
+    `).join('');
+}
+
+async function addSubject() {
+    const nameEl = document.getElementById('newSubjectName');
+    const name = nameEl.value.trim();
+    if (!name) { showToast('⚠️ Please enter a subject name!'); nameEl.focus(); return; }
+
+    if (!isLive) {
+        showToast('⚠️ Open via MAMP (localhost:8888) to save subjects to database.');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/subjects.php`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, color: selectedColor })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`✅ "${name}" added!`);
+            nameEl.value = '';
+            loadSubjects();
+        } else {
+            showToast('❌ ' + (data.error || 'Error adding subject'));
+        }
+    } catch(e) {
+        showToast('❌ Could not reach server.');
+    }
+}
+
+async function deleteSubject(id, name) {
+    if (!confirm(`Delete subject "${name}"?`)) return;
+    try {
+        const res = await fetch(`${API_BASE}/subjects.php`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`🗑 "${name}" removed`);
+            loadSubjects();
+        }
+    } catch(e) {
+        showToast('❌ Error deleting subject');
+    }
+}
+
+function formatDate(dt) {
+    if (!dt) return '';
+    return new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function signOut() {
+    if (!confirm('Sign out?')) return;
+    try {
+        await fetch(`${AUTH_URL}?action=signout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+    } catch(e) {}
+    localStorage.removeItem('sp_user');
+    window.location.replace('login.html');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initColorPicker();
+    loadSubjects();
+    document.getElementById('newSubjectName').addEventListener('keydown', e => {
+        if (e.key === 'Enter') addSubject();
+    });
+});
+</script>
+</body>
+</html>

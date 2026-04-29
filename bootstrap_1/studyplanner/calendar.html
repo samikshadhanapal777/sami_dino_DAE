@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar — StudyPlanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Calendar header */
+        .cal-nav {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:20px;
+        }
+        .cal-nav h2 {
+            font-family:'Nunito',sans-serif; font-size:1.4rem; font-weight:900;
+            color:var(--text);
+        }
+        .cal-nav-btns { display:flex; gap:8px; }
+        .btn-nav {
+            background:var(--blue-lt); color:var(--blue);
+            border:none; border-radius:8px; padding:7px 16px;
+            font-family:'Nunito',sans-serif; font-weight:700; font-size:0.9rem;
+            cursor:pointer; transition:background 0.2s;
+        }
+        .btn-nav:hover { background:var(--blue); color:white; }
+        .btn-nav.today { background:var(--blue); color:white; }
+        .btn-nav.today:hover { background:#3a6090; }
+
+        /* Grid */
+        .cal-grid {
+            display:grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap:1px;
+            background:var(--border);
+            border-radius:12px;
+            overflow:hidden;
+        }
+        .cal-day-header {
+            background:#f8fafc; text-align:center;
+            padding:10px 4px; font-size:0.75rem; font-weight:700;
+            color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;
+        }
+        .cal-cell {
+            background:var(--card); min-height:100px;
+            padding:8px 6px; position:relative;
+            cursor:default; transition:background 0.15s;
+        }
+        .cal-cell:hover { background:#f8fafc; }
+        .cal-cell.other-month { background:#f9fafb; }
+        .cal-cell.other-month .cal-date { color:#c5cdd8; }
+        .cal-cell.today { background:#eff6ff; }
+        .cal-cell.today .cal-date {
+            background:var(--blue); color:white;
+            border-radius:50%; width:26px; height:26px;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:900;
+        }
+
+        .cal-date {
+            font-family:'Nunito',sans-serif; font-size:0.82rem;
+            font-weight:700; color:var(--text); margin-bottom:4px;
+            width:26px; height:26px; display:flex;
+            align-items:center; justify-content:center;
+        }
+
+        /* Task dots on calendar */
+        .cal-event {
+            background:var(--blue); color:white;
+            border-radius:5px; padding:2px 6px;
+            font-size:0.68rem; font-weight:700;
+            margin-bottom:2px; white-space:nowrap;
+            overflow:hidden; text-overflow:ellipsis;
+            cursor:pointer; transition:opacity 0.15s;
+        }
+        .cal-event:hover { opacity:0.85; }
+        .cal-event.exam { background:var(--red); }
+        .cal-event.done { background:#94a3b8; text-decoration:line-through; }
+
+        /* Sidebar / legend */
+        .cal-wrapper {
+            display:grid;
+            grid-template-columns: 1fr 260px;
+            gap:20px;
+            align-items:start;
+        }
+        .cal-sidebar .card { padding:20px; }
+        .sidebar-title {
+            font-family:'Nunito',sans-serif; font-size:0.95rem;
+            font-weight:800; color:var(--blue); margin-bottom:14px;
+        }
+        .upcoming-item {
+            display:flex; gap:10px; align-items:flex-start;
+            padding:10px 0; border-bottom:1px solid var(--border);
+        }
+        .upcoming-item:last-child { border-bottom:none; }
+        .upcoming-dot {
+            width:10px; height:10px; border-radius:50%;
+            flex-shrink:0; margin-top:4px;
+        }
+        .upcoming-dot.task { background:var(--blue); }
+        .upcoming-dot.exam { background:var(--red); }
+        .upcoming-title { font-weight:700; font-size:0.88rem; }
+        .upcoming-date  { font-size:0.75rem; color:var(--muted); }
+
+        .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; align-items:center; }
+        .legend-item { display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:var(--muted); }
+        .legend-dot { width:10px; height:10px; border-radius:3px; }
+
+        @media (max-width:900px) {
+            .cal-wrapper { grid-template-columns:1fr; }
+            .cal-cell { min-height:70px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">📚</span>
+        <span class="brand-text"><strong>Study</strong>Planner</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="index.html">Dashboard</a></li>
+        <li><a href="calendar.html" class="active">Calendar</a></li>
+        <li><a href="subjects.html">Subjects</a></li>
+        <li><a href="tasks.html">Tasks</a></li>
+    </ul>
+    <button class="btn-signout" onclick="signOut()">Sign Out</button>
+</nav>
+
+<main class="main-wrapper">
+
+    <div class="cal-wrapper">
+        <!-- Main Calendar -->
+        <div>
+            <div class="card">
+                <div class="cal-nav">
+                    <div class="cal-nav-btns">
+                        <button class="btn-nav" onclick="changeMonth(-1)">&#8249; Prev</button>
+                        <button class="btn-nav today" onclick="goToday()">Today</button>
+                        <button class="btn-nav" onclick="changeMonth(1)">Next &#8250;</button>
+                    </div>
+                    <h2 id="calMonthLabel">Loading…</h2>
+                </div>
+
+                <div class="cal-grid" id="calGrid">
+                    <!-- Day headers -->
+                    <div class="cal-day-header">Sun</div>
+                    <div class="cal-day-header">Mon</div>
+                    <div class="cal-day-header">Tue</div>
+                    <div class="cal-day-header">Wed</div>
+                    <div class="cal-day-header">Thu</div>
+                    <div class="cal-day-header">Fri</div>
+                    <div class="cal-day-header">Sat</div>
+                    <!-- Cells injected by JS -->
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Task</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Exam</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div> Completed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Upcoming -->
+        <div class="cal-sidebar">
+            <div class="card">
+                <div class="sidebar-title">Upcoming (next 14 days)</div>
+                <div id="upcomingList"><p style="color:var(--muted);font-size:0.85rem">Loading…</p></div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- AUTH GUARD -->
+<script>
+(async function() {
+    const AUTH_BASE = window.location.origin + '/studyplanner/auth.php';
+    try {
+        const res = await fetch(`${AUTH_BASE}?action=check`, {
+            credentials: 'include',
+            signal: AbortSignal.timeout(3000)
+        });
+        const data = await res.json();
+        if (!data.loggedIn) window.location.replace('login.html');
+    } catch(e) {
+        if (!localStorage.getItem('sp_user')) window.location.replace('login.html');
+    }
+})();
+</script>
+
+<script>
+const ORIGIN   = window.location.origin;
+const API_BASE = ORIGIN + '/studyplanner/api';
+const AUTH_URL = ORIGIN + '/studyplanner/auth.php';
+
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth(); // 0-indexed
+let allTasks     = [];
+
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
+async function loadCalendar() {
+    try {
+        const res = await fetch(`${API_BASE}/tasks.php?type=tasks`, {
+            credentials: 'include',
+            signal: AbortSignal.timeout(4000)
+        });
+        allTasks = await res.json();
+        if (!Array.isArray(allTasks)) allTasks = [];
+    } catch(e) {
+        allTasks = [];
+    }
+    renderCalendar();
+    renderUpcoming();
+}
+
+function renderCalendar() {
+    const label = document.getElementById('calMonthLabel');
+    label.textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+
+    const grid  = document.getElementById('calGrid');
+    // Remove all cells (keep the 7 day headers)
+    const headers = Array.from(grid.querySelectorAll('.cal-day-header'));
+    grid.innerHTML = '';
+    headers.forEach(h => grid.appendChild(h));
+
+    const today     = new Date();
+    const firstDay  = new Date(currentYear, currentMonth, 1);
+    const lastDay   = new Date(currentYear, currentMonth + 1, 0);
+    const startDow  = firstDay.getDay(); // 0=Sun
+    const totalDays = lastDay.getDate();
+
+    // Leading blank cells from previous month
+    const prevLast = new Date(currentYear, currentMonth, 0).getDate();
+    for (let i = 0; i < startDow; i++) {
+        const day = prevLast - startDow + 1 + i;
+        const cell = makeCell(day, new Date(currentYear, currentMonth - 1, day), true, today, allTasks);
+        grid.appendChild(cell);
+    }
+
+    // Current month days
+    for (let d = 1; d <= totalDays; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const cell = makeCell(d, date, false, today, allTasks);
+        grid.appendChild(cell);
+    }
+
+    // Trailing blank cells
+    const totalCells = startDow + totalDays;
+    const trailing   = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let i = 1; i <= trailing; i++) {
+        const cell = makeCell(i, new Date(currentYear, currentMonth + 1, i), true, today, allTasks);
+        grid.appendChild(cell);
+    }
+}
+
+function makeCell(dayNum, date, otherMonth, today, tasks) {
+    const cell = document.createElement('div');
+    const isToday = date.toDateString() === today.toDateString();
+    cell.className = 'cal-cell' +
+        (otherMonth ? ' other-month' : '') +
+        (isToday    ? ' today'       : '');
+
+    const dateStr = date.toISOString().split('T')[0];
+    const dayLabel = document.createElement('div');
+    dayLabel.className = 'cal-date';
+    dayLabel.textContent = dayNum;
+    cell.appendChild(dayLabel);
+
+    // Tasks due on this date
+    tasks.filter(t => t.due_date === dateStr).forEach(t => {
+        const ev = document.createElement('div');
+        ev.className = 'cal-event' +
+            (t.type === 'exam' ? ' exam' : '') +
+            (t.done ? ' done' : '');
+        ev.textContent = t.title;
+        ev.title = t.title + (t.due_date ? ' — ' + t.due_date : '');
+        cell.appendChild(ev);
+    });
+
+    return cell;
+}
+
+function renderUpcoming() {
+    const list  = document.getElementById('upcomingList');
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const in14  = new Date(today);
+    in14.setDate(today.getDate() + 14);
+
+    const upcoming = allTasks
+        .filter(t => {
+            if (!t.due_date || t.done) return false;
+            const d = new Date(t.due_date + 'T00:00:00');
+            return d >= today && d <= in14;
+        })
+        .sort((a, b) => a.due_date.localeCompare(b.due_date));
+
+    if (upcoming.length === 0) {
+        list.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Nothing due in the next 14 days.</p>';
+        return;
+    }
+
+    list.innerHTML = upcoming.map(t => `
+        <div class="upcoming-item">
+            <div class="upcoming-dot ${t.type}"></div>
+            <div>
+                <div class="upcoming-title">${escHtml(t.title)}</div>
+                <div class="upcoming-date">${formatDate(t.due_date)} &bull; ${t.type === 'exam' ? '📌 Exam' : '📋 Task'}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function changeMonth(dir) {
+    currentMonth += dir;
+    if (currentMonth > 11) { currentMonth = 0;  currentYear++; }
+    if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+    renderCalendar();
+}
+
+function goToday() {
+    const now = new Date();
+    currentYear  = now.getFullYear();
+    currentMonth = now.getMonth();
+    renderCalendar();
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(d) {
+    if (!d) return '';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function signOut() {
+    if (!confirm('Sign out?')) return;
+    try {
+        await fetch(`${AUTH_URL}?action=signout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+    } catch(e) {}
+    localStorage.removeItem('sp_user');
+    window.location.replace('login.html');
+}
+
+document.addEventListener('DOMContentLoaded', loadCalendar);
+</script>
+</body>
+</html>
